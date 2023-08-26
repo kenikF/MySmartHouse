@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="cat.jpg" />
+    <None Remove="free-icon-rain-4150897.png" />
+    <None Remove="free-icon-sun-4503036.png" />
+    <None Remove="free-icon-thermometer-1809260.png" />
+    <None Remove="free-icon-windsock-4151026.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MahApps.Metro" Version="2.4.10" />
+    <PackageReference Include="MongoDB.Driver" Version="2.21.0" />
+    <PackageReference Include="Syncfusion.Licensing" Version="22.2.10" />
+    <PackageReference Include="Syncfusion.SfGrid.WPF" Version="22.2.10" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="cat.jpg" />
+    <Resource Include="free-icon-rain-4150897.png" />
+    <Resource Include="free-icon-sun-4503036.png" />
+    <Resource Include="free-icon-thermometer-1809260.png" />
+    <Resource Include="free-icon-windsock-4151026.png" />
+  </ItemGroup>
+
+</Project>
