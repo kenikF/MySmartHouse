@@ -16,29 +16,31 @@
         <Grid.RowDefinitions>
             <RowDefinition/>
         </Grid.RowDefinitions>
+
+        <Image HorizontalAlignment="Center" Height="940" VerticalAlignment="Center" Width="1880" Source="/pech-dlja-teplicy-svoimi-rukami1.jpg" Stretch="Fill">
+        </Image>
         <Rectangle HorizontalAlignment="Center" Height="940" Stroke="Black" VerticalAlignment="Center" Width="1880">
             <Rectangle.Effect>
-                <DropShadowEffect/>
+                <BlurEffect/>
             </Rectangle.Effect>
         </Rectangle>
-        <Button x:Name="conBtn" Content="Подключиться" HorizontalAlignment="Left" Margin="261,40,0,0" VerticalAlignment="Top" Width="175" Click="Connect_ClickAsync" Height="43" RenderTransformOrigin="-2.852,-1.124" FontSize="16"/>
-        <ComboBox x:Name="portBox" ItemsSource="{Binding Source={StaticResource portNames}}" Margin="40,40,1692,899" />
-        <Button x:Name="onBtn" Content="ВКЛЮЧИТЬ РЕЛЕ" HorizontalAlignment="Left" Margin="480,94,0,0" VerticalAlignment="Top" Click="OnButton_Click" Height="35" Width="110" FontSize="24" FontFamily="Arial Black"/>
-        <Button x:Name="offBtn" Content="ОТКЛЮЧИТЬ РЕЛЕ" HorizontalAlignment="Left" Margin="480,62,0,0" VerticalAlignment="Top" Click="OffButton_Click" Height="27" Width="110" FontSize="24" FontFamily="Arial Black"/>
-        <Rectangle HorizontalAlignment="Left" Margin="40,129,0,459" Stroke="Black" Width="493" Fill="#FF00FF56">
+        <Button x:Name="conBtn" Content="Подключиться" HorizontalAlignment="Left" Margin="261,40,0,0" VerticalAlignment="Top" Width="175" Click="Connect_ClickAsync" Height="45" RenderTransformOrigin="-2.852,-1.124" FontSize="18" Background="#FFF16D8B" FontFamily="Arial Black"/>
+        <ComboBox x:Name="portBox" ItemsSource="{Binding Source={StaticResource portNames}}" Margin="40,40,1692,919" BorderBrush="#FFF16D8B" Background="#FFF16D8B" FontFamily="Arial Black" FontSize="18" />
+        <Rectangle HorizontalAlignment="Left" Margin="40,129,0,430" Stroke="Black" Width="493" Fill="#FF00FF56">
             <Rectangle.Effect>
                 <DropShadowEffect/>
             </Rectangle.Effect>
         </Rectangle>
         <Label x:Name="temp_internal_air" HorizontalAlignment="Left" Margin="52,145,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ТЕМПЕРАТУРА воздуха  С°" />
-        <Label x:Name="temp_ground_text" HorizontalAlignment="Left" Margin="52,200,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ТЕМПЕРАТУРА почвы     С°" />
-        <Label x:Name="temp_water" HorizontalAlignment="Left" Margin="52,255,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ТЕМПЕРАТУРА воды       С°" />
-        <Label x:Name="humidity_air" HorizontalAlignment="Left" Margin="52,310,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ВЛАЖНОСТЬ воздуха     %" />
-        <Label x:Name="humidity_ground" HorizontalAlignment="Left" Margin="52,365,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ВЛАЖНОСТЬ почвы        %" />
-        <Label x:Name="lighting_text" HorizontalAlignment="Left" Margin="52,420,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ОСВЕЩЕННОСТЬ             lx" />
-        <Label x:Name="co2_text" HorizontalAlignment="Left" Margin="52,475,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="CO2                                ppm" />
-
-        <Rectangle HorizontalAlignment="Left" Margin="41,569,0,44" Stroke="Black" Width="286" Fill="#FFC3FF00">
+        <Label x:Name="temp_ground_text" HorizontalAlignment="Left" Margin="52,195,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ТЕМПЕРАТУРА почвы     С°" />
+        <Label x:Name="temp_water" HorizontalAlignment="Left" Margin="52,250,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ТЕМПЕРАТУРА воды       С°" />
+        <Label x:Name="humidity_air" HorizontalAlignment="Left" Margin="52,305,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ВЛАЖНОСТЬ воздуха     %" />
+        <Label x:Name="humidity_ground" HorizontalAlignment="Left" Margin="52,360,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ВЛАЖНОСТЬ почвы        %" />
+        <Label x:Name="lighting_text" HorizontalAlignment="Left" Margin="52,415,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ОСВЕЩЕННОСТЬ             lx" />
+        <Label x:Name="co2_text" HorizontalAlignment="Left" Margin="52,470,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="CO2                                ppm" />
+        <Label x:Name="co2_text_Копировать" HorizontalAlignment="Left" Margin="52,525,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="Расход воды                   л/ч." RenderTransformOrigin="0.499,0.526" />
+        
+        <Rectangle HorizontalAlignment="Left" Margin="41,588,0,44" Stroke="Black" Width="492" Fill="#FFC3FF00">
             <Rectangle.Effect>
                 <DropShadowEffect/>
             </Rectangle.Effect>
@@ -47,7 +49,7 @@
         <Image HorizontalAlignment="Left" Height="67" Margin="75,766,0,0" VerticalAlignment="Top" Width="60" Source="/free-icon-rain-4150897.png"/>
         <Image HorizontalAlignment="Left" Height="68" Margin="75,860,0,0" VerticalAlignment="Top" Width="60" Source="/free-icon-windsock-4151026.png"/>
         <Image HorizontalAlignment="Left" Height="74" Margin="75,598,0,0" VerticalAlignment="Top" Width="60" Source="/free-icon-thermometer-1809260.png" RenderTransformOrigin="0.449,0.512"/>
-        <Rectangle HorizontalAlignment="Left" Margin="626,73,0,459" Stroke="Black" Width="1203" Fill="#FF6DAFE2">
+        <Rectangle HorizontalAlignment="Left" Margin="626,73,0,430" Stroke="Black" Width="1203" Fill="#FF6DAFE2">
             <Rectangle.Effect>
                 <DropShadowEffect/>
             </Rectangle.Effect>
@@ -139,40 +141,40 @@
         <CheckBox x:Name="watering_checkBox" Tag="watering" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,161,0,0" VerticalAlignment="Top" Height="23" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="heating_checkBox" Tag="heating" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,200,0,0" VerticalAlignment="Top" Height="23" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="lighting_checkBox" Tag="lighting" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,242,0,0" VerticalAlignment="Top" Height="23" FontSize="14" FontFamily="Arial Black"/>
-        <CheckBox x:Name="humididityfication_checkBox" Tag="humidification" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,281,0,0" VerticalAlignment="Top" Height="23" FontSize="14" FontFamily="Arial Black"/>
+        <CheckBox x:Name="humidification_checkBox" Tag="humidification" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,281,0,0" VerticalAlignment="Top" Height="23" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="fan_general_checkBox" Tag="fan_general" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,318,0,0" VerticalAlignment="Top" Height="24" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="fan_circulation_checkBox" Tag="fan_circulation" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,358,0,0" VerticalAlignment="Top" Height="22" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="framuga_checkBox" Tag="framuga" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,400,0,0" VerticalAlignment="Top" Height="22" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="co2_checkBox" Tag="co2" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,438,0,0" VerticalAlignment="Top" Height="24" FontSize="14" FontFamily="Arial Black"/>
         <CheckBox x:Name="curtain_checkBox" Tag="curtain" Click="CheckBox_Click" Content="ежедневно" HorizontalAlignment="Left" Margin="1435,480,0,0" VerticalAlignment="Top" Height="24" FontSize="14" FontFamily="Arial Black"/>
-        <Rectangle HorizontalAlignment="Left" Margin="348,569,0,44" Stroke="Black" Width="671" Fill="#FFFD8D1C">
+        <Rectangle HorizontalAlignment="Left" Margin="626,588,0,44" Stroke="Black" Width="671" Fill="#FFFD8D1C">
             <Rectangle.Effect>
                 <DropShadowEffect/>
             </Rectangle.Effect>
         </Rectangle>
-        <TextBlock Margin="378,640,1194,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="29" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="воздуха"/><Run Text=" "/><Run Language="ru-ru" Text=" С°"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,679,0,0" TextWrapping="Wrap" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="почвы"/><Run Language="ru-ru" Text="     "/><Run Text="С°"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black" RenderTransformOrigin="0.509,0.609"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="воды"/><Run Language="ru-ru" Text="       "/><Run Text="С°"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,759,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ВЛАЖНОСТЬ воздуха"/><Run Language="ru-ru" Text="     %"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,799,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ВЛАЖНОСТЬ "/><Run Text="почвы"/><Run Language="ru-ru" Text="        %"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ОСВЕЩЕННОСТЬ      "/><Run Text="       "/><Run Text="lx"/></TextBlock>
-        <TextBlock HorizontalAlignment="Left" Margin="378,879,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="CO2               "/><Run Text="                 "/><Run Text="ppm"/></TextBlock>
-        <Label Content="Min" HorizontalAlignment="Left" Margin="791,602,0,0" VerticalAlignment="Top" FontFamily="Arial Black" FontSize="14" />
-        <Label Content="Max" HorizontalAlignment="Left" Margin="918,602,0,0" VerticalAlignment="Top" FontFamily="Arial Black" FontSize="14" />
-        <TextBox HorizontalAlignment="Left" Margin="783,640,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,640,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,680,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,680,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,760,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,760,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,800,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,800,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="783,880,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
-        <TextBox HorizontalAlignment="Left" Margin="912,880,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBlock Margin="656,640,916,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="29" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="воздуха"/><Run Text=" "/><Run Language="ru-ru" Text=" С°"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,679,0,0" TextWrapping="Wrap" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="почвы"/><Run Language="ru-ru" Text="     "/><Run Text="С°"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black" RenderTransformOrigin="0.509,0.609"><Run Text=" "/><Run Text="ТЕМПЕРАТУРА "/><Run Text="воды"/><Run Language="ru-ru" Text="       "/><Run Text="С°"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,759,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ВЛАЖНОСТЬ воздуха"/><Run Language="ru-ru" Text="     %"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,799,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ВЛАЖНОСТЬ "/><Run Text="почвы"/><Run Language="ru-ru" Text="        %"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="ОСВЕЩЕННОСТЬ      "/><Run Text="       "/><Run Text="lx"/></TextBlock>
+        <TextBlock HorizontalAlignment="Left" Margin="656,879,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="30" Width="348" FontSize="22" FontFamily="Arial Black"><Run Text=" "/><Run Text="CO2               "/><Run Text="                 "/><Run Text="ppm"/></TextBlock>
+        <Label Content="Min" HorizontalAlignment="Left" Margin="1069,602,0,0" VerticalAlignment="Top" FontFamily="Arial Black" FontSize="14" />
+        <Label Content="Max" HorizontalAlignment="Left" Margin="1196,602,0,0" VerticalAlignment="Top" FontFamily="Arial Black" FontSize="14" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,640,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,640,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,680,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,680,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,719,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,760,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,760,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,800,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,800,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,839,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1061,880,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
+        <TextBox HorizontalAlignment="Left" Margin="1190,880,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="62" Height="29" FontSize="16" FontFamily="Arial Black" />
         <ToggleButton x:Name="control_toggleBtn" Tag="co2" Click="Control_ToggleButton_Click" Content="Ручное" Width="154" Height="39" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="1701,895,0,0" Background="#FF2BFF00" FontFamily="Arial Black" FontSize="16" >
             <ToggleButton.Effect>
                 <DropShadowEffect/>
@@ -186,7 +188,7 @@
                 </LinearGradientBrush>
             </Label.Foreground>
         </Label>
-        <Button Content="Журнал" HorizontalAlignment="Left" Margin="1062,879,0,0" VerticalAlignment="Top" Height="55" Width="248" FontSize="18" FontFamily="Arial Black" Click="History_Button_Click">
+        <Button Content="Журнал" HorizontalAlignment="Left" Margin="1365,881,0,0" VerticalAlignment="Top" Height="55" Width="248" FontSize="18" FontFamily="Arial Black" Click="History_Button_Click">
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
@@ -195,5 +197,10 @@
         <Label x:Name="uv_text" Content="0" HorizontalAlignment="Left" Margin="162,692,0,0" VerticalAlignment="Top" Height="43" Width="147" FontSize="22" FontFamily="Arial Black"/>
         <Label x:Name="rain_text" Content="0" HorizontalAlignment="Left" Margin="162,779,0,0" VerticalAlignment="Top" Height="43" Width="147" FontSize="22" FontFamily="Arial Black"/>
         <Label x:Name="wind_text" Content="0" HorizontalAlignment="Left" Margin="162,873,0,0" VerticalAlignment="Top" Height="43" Width="147" FontSize="22" FontFamily="Arial Black"/>
+        <DataGrid x:Name="Errors_List" Margin="1320,588,91,150" AutoGenerateColumns="False" Foreground="Black">
+            <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Error}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </Window>

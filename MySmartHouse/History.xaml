@@ -12,7 +12,12 @@
                 <DropShadowEffect/>
             </DatePicker.Effect>
         </DatePicker>
-        <DataGrid x:Name="History_List" d:ItemsSource="{d:SampleData ItemCount=100}" Margin="0,251,0,0"/>
+        <DataGrid x:Name="History_List" Margin="0,185,0,0" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Дата и время" Binding="{Binding Timestamp}" Width="*" />
+                <DataGridTextColumn Header="Значения датчиков" Binding="{Binding SensorValues}" Width="*" />
+            </DataGrid.Columns>
+        </DataGrid>
         <Label Content="Начало" HorizontalAlignment="Left" Margin="356,26,0,0" VerticalAlignment="Top" FontSize="14" FontFamily="Arial Black"/>
         <ComboBox x:Name="Sensors_ComboBox" HorizontalAlignment="Left" Margin="21,44,0,0" VerticalAlignment="Top" Width="240" Height="42" FontFamily="Arial Black" FontSize="14">
             <ComboBoxItem>Температура воздуха</ComboBoxItem>

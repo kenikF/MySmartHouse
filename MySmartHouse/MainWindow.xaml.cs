@@ -12,6 +12,7 @@ using MongoDB.Driver;
 using MongoDB.Bson;
 using System.Collections.Generic;
 using static MongoDB.Driver.WriteConcern;
+using System.Media;
 
 namespace MySmartHouse
 {
@@ -31,7 +32,17 @@ namespace MySmartHouse
         IMongoCollection<BsonDocument> greenhouse;
         string Response;
         int clickcount1;
-        
+
+        private readonly Dictionary<string, string> errorTranslations = new Dictionary<string, string>
+        {
+            {"temperature", "Температура"},
+            {"humidity", "Влажность"},
+            {"uv", "Ультрафиолет"},
+            {"lighting", "Освещение"},
+            {"co2", "CO2"},
+            {"heating", "Отопление"}
+        };
+
 
         public MainWindow()
         {
@@ -84,10 +95,6 @@ namespace MySmartHouse
 
                         await UpdateToggleButtonStatesAsync();
 
-
-                        onBtn.IsEnabled = true;
-                        offBtn.IsEnabled = false;
-
                         conBtn.Content = "Отключиться";
 
                         string pn = portBox.SelectedValue.ToString();
@@ -97,6 +104,7 @@ namespace MySmartHouse
                             ArduinoPort.BaudRate = (9600);
                             ArduinoPort.DataReceived += ArduinoPort_DataReceived;
                             ArduinoPort.Open();
+                            Console.WriteLine(ArduinoPort.IsOpen);
                         }
 
                         if (!isRunning)
@@ -104,18 +112,21 @@ namespace MySmartHouse
                             isRunning = true;
                             tokenSource = new CancellationTokenSource();
 
+                            Thread updaterThread = new Thread(UpdateCheckBoxesFromDatabase);
+                            updaterThread.Start();
                             // Запуск потока для обновления Combobox'ов
                             Thread updateThread = new Thread(UpdateComboBoxes);
                             updateThread.IsBackground = true;
                             updateThread.Start();
                             StartToggleButtonUpdateThread();
+                            var errorUpdateThread = new Thread(UpdateErrorsList);
+                            errorUpdateThread.IsBackground = true;
+                            errorUpdateThread.Start();
                             await Task.Run(() => ExecuteRepeatedlyAsync(tokenSource.Token));
                         }
 
                         break;
                     case 0:
-                        onBtn.IsEnabled = false;
-                        offBtn.IsEnabled = false;
 
                         conBtn.Content = "Подключиться";
 
@@ -141,6 +152,42 @@ namespace MySmartHouse
             } catch(Exception ex) {
                 Console.WriteLine("Не удалось подключиться!");
                 Console.WriteLine($"Ошибка: {ex}");
+            }
+        }
+
+        private void UpdateErrorsList()
+        {
+            while (true)
+            {
+                Thread.Sleep(1000);
+
+                var currentDocument = greenhouse.Find(Builders<BsonDocument>.Filter.Empty).FirstOrDefault();
+                if (currentDocument != null)
+                {
+                    var errors = currentDocument["errors"].AsBsonDocument;
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        Errors_List.Items.Clear();
+                        foreach (var error in errors)
+                        {
+                            var translation = errorTranslations.ContainsKey(error.Name)
+                            ? errorTranslations[error.Name]
+                            : error.Name;
+
+                            if (error.Value.AsBoolean)
+                            {
+                                string audioFilePath = "error.mp3";
+
+                                SoundPlayer player = new SoundPlayer(audioFilePath);
+
+                                Console.WriteLine("Воспроизведение звука...");
+                                player.PlayLooping();
+                                Errors_List.Items.Add(new { Error = $"{translation}: Ошибка" });
+                            }
+                        }
+                    });
+                }
             }
         }
 
@@ -313,8 +360,6 @@ namespace MySmartHouse
                 Console.WriteLine(Response);
 
                 if (Response.Contains("o")) {
-                    onBtn.IsEnabled = false;
-                    offBtn.IsEnabled = true;
                     Console.WriteLine("Реле включено!");
                 }
             }
@@ -322,7 +367,7 @@ namespace MySmartHouse
 
         }
 
-        private void OffButton_Click(object sender, RoutedEventArgs e)
+/*        private void OffButton_Click(object sender, RoutedEventArgs e)
         {
             try
             {
@@ -332,13 +377,11 @@ namespace MySmartHouse
 
                 if (Response.Contains("o"))
                 {
-                    onBtn.IsEnabled = true;
-                    offBtn.IsEnabled = false;
                     Console.WriteLine("Реле выключено!");
                 }
             }
             catch { }
-        }
+        }*/
 
         private void InitializeComboBox()
         {
@@ -429,16 +472,54 @@ namespace MySmartHouse
             history.Show();
         }
 
-        private void CheckBox_Click(object sender, RoutedEventArgs e)
+        private void UpdateCheckBoxesFromDatabase()
+        {
+            while (true)
+            {
+                Thread.Sleep(1000); // Подождать 1 секунду перед следующей проверкой
+
+                var currentDocument = greenhouse.Find(Builders<BsonDocument>.Filter.Empty).FirstOrDefault();
+                if (currentDocument != null)
+                {
+                    var devices = currentDocument["actual"]["devices"].AsBsonDocument;
+                    UpdateCheckBoxState(devices);
+                }
+            }
+        }
+
+        private void UpdateCheckBoxState(BsonDocument devices)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                watering_checkBox.IsChecked = devices["watering"]["everyday"].AsBoolean;
+                heating_checkBox.IsChecked = devices["heating"]["everyday"].AsBoolean;
+                lighting_checkBox.IsChecked = devices["lighting"]["everyday"].AsBoolean;
+                humidification_checkBox.IsChecked = devices["humidification"]["everyday"].AsBoolean;
+                fan_general_checkBox.IsChecked = devices["fan_general"]["everyday"].AsBoolean;
+                fan_circulation_checkBox.IsChecked = devices["fan_circulation"]["everyday"].AsBoolean;
+                framuga_checkBox.IsChecked = devices["framuga"]["everyday"].AsBoolean;
+                co2_checkBox.IsChecked = devices["co2"]["everyday"].AsBoolean;
+                curtain_checkBox.IsChecked = devices["curtain"]["everyday"].AsBoolean;
+            });
+        }
+
+                private async void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             CheckBox checkBox = sender as CheckBox;
             if (checkBox != null)
             {
                 bool state = (bool)checkBox.IsChecked;
                 string tag = checkBox.Tag as string;
+
+                // Обновляем базу данных
+                var filter = Builders<BsonDocument>.Filter.Empty;
+                var update = Builders<BsonDocument>.Update.Set($"actual.devices.{tag}.everyday", state);
+                await greenhouse.UpdateOneAsync(filter, update);
+
                 Console.WriteLine("CHECKBOX: " + tag + ", STATE: " + (state ? "включено" : "выключено"));
             }
         }
+
 
         private async Task UpdateDeviceTimeAsync(string deviceName, string timeField, string newValue)
         {

@@ -13,6 +13,7 @@
     <None Remove="free-icon-sun-4503036.png" />
     <None Remove="free-icon-thermometer-1809260.png" />
     <None Remove="free-icon-windsock-4151026.png" />
+    <None Remove="pech-dlja-teplicy-svoimi-rukami1.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +30,7 @@
     <Resource Include="free-icon-sun-4503036.png" />
     <Resource Include="free-icon-thermometer-1809260.png" />
     <Resource Include="free-icon-windsock-4151026.png" />
+    <Resource Include="pech-dlja-teplicy-svoimi-rukami1.jpg" />
   </ItemGroup>
 
 </Project>
