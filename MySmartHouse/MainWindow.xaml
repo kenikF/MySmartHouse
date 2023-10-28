@@ -39,7 +39,7 @@
         <Label x:Name="lighting_text" HorizontalAlignment="Left" Margin="52,415,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="ОСВЕЩЕННОСТЬ             lx" />
         <Label x:Name="co2_text" HorizontalAlignment="Left" Margin="52,470,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="CO2                                ppm" />
         <Label x:Name="co2_text_Копировать" HorizontalAlignment="Left" Margin="52,525,0,0" VerticalAlignment="Top" Height="40" Width="465" FontSize="22" FontFamily="Arial Black" Content="Расход воды                   л/ч." RenderTransformOrigin="0.499,0.526" />
-        
+
         <Rectangle HorizontalAlignment="Left" Margin="41,588,0,44" Stroke="Black" Width="492" Fill="#FFC3FF00">
             <Rectangle.Effect>
                 <DropShadowEffect/>
@@ -96,7 +96,7 @@
                 <DropShadowEffect/>
             </ToggleButton.Effect>
         </ToggleButton>
-        <ToggleButton x:Name="framuga_toggleBtn" Tag="framuga" Click="ToggleButton_ClickAsync" Content="Отключено" Width="109" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="1007,395,0,0" Background="White" FontFamily="Arial Black" >
+        <ToggleButton x:Name="framuga_toggleBtn" Tag="framuga" Click="ToggleButton_ClickAsync" Content="Закрыто" Width="109" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="1007,395,0,0" Background="White" FontFamily="Arial Black" >
             <ToggleButton.Effect>
                 <DropShadowEffect/>
             </ToggleButton.Effect>
@@ -202,5 +202,14 @@
                 <DataGridTextColumn Binding="{Binding Error}" Width="*" />
             </DataGrid.Columns>
         </DataGrid>
+        <Button  x:Name="framuga_toggleBtn_Копировать" Tag="framuga" Click="FramugaStop_ClickAsync" Content="Стоп" Width="75" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="927,394,0,0" Background="White" FontFamily="Arial Black" >
+            <Button.Effect>
+                <DropShadowEffect/>
+            </Button.Effect>
+        </Button>
+        
+        <Image HorizontalAlignment="Left" Height="43" Margin="456,42,0,0" VerticalAlignment="Top" Width="52" Source="sound_on.png" />
+
+
     </Grid>
 </Window>

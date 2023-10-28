@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Media;
 using MySql.Data.MySqlClient;
 using System.Data;
+using System.Windows.Media.Imaging;
 
 namespace MySmartHouse
 {
@@ -24,6 +25,8 @@ namespace MySmartHouse
     {
         public CancellationTokenSource tokenSource;
         public bool isRunning = false;
+
+        const char FRAMUGA_STOP_ACTION = 'q';
 
         const string connectionUrl = "mongodb://localhost:27017";
         SerialPort ArduinoPort = new();
@@ -786,6 +789,19 @@ namespace MySmartHouse
             }
         }
 
+        public async void FramugaStop_ClickAsync(object sender, RoutedEventArgs e)
+        {
+            ArduinoPort.WriteLine(FRAMUGA_STOP_ACTION.ToString());
+            Console.WriteLine(FRAMUGA_STOP_ACTION);
+            string Response = ArduinoPort.ReadLine();
+            Console.WriteLine(Response);
+
+            if (Response.Contains("1"))
+            {
+                Console.WriteLine($"Реле было остановлено!");
+            }
+        }
+
         public async Task UpdateDeviceStatusAsync(string deviceTag, bool isEnabled)
         {
             try
@@ -920,6 +936,12 @@ namespace MySmartHouse
                 catch { }
 
                 string state = isEnabled ? "Включено" : "Отключено";
+
+                if (tag == "framuga")
+                {
+                    state = isEnabled ? "Открыто" : "Закрыто";
+                }
+
 
                 Ellipse circle = FindName($"{tag}_Circle") as Ellipse;
                 if (circle != null)
@@ -1265,7 +1287,6 @@ namespace MySmartHouse
                 }
             }
         }
-
     }
 
     public class SensorData
