@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 using MongoDB.Driver;
 using MongoDB.Bson;
 using System.Collections.Generic;
-using static MongoDB.Driver.WriteConcern;
 using System.Media;
+using MySql.Data.MySqlClient;
+using System.Data;
 
 namespace MySmartHouse
 {
@@ -21,28 +22,19 @@ namespace MySmartHouse
     /// </summary>
     public partial class MainWindow : Window
     {
-        private CancellationTokenSource tokenSource;
-        private bool isRunning = false;
+        public CancellationTokenSource tokenSource;
+        public bool isRunning = false;
 
         const string connectionUrl = "mongodb://localhost:27017";
         SerialPort ArduinoPort = new();
         SensorData sensorData;
+        public readonly string connectionString = "Server=localhost;Database=greenhouse;Uid=root;Pwd=;";
         MongoClient client = new(connectionUrl);
         IMongoDatabase database;
         IMongoCollection<BsonDocument> greenhouse;
+
         string Response;
         int clickcount1;
-
-        private readonly Dictionary<string, string> errorTranslations = new Dictionary<string, string>
-        {
-            {"temperature", "Температура"},
-            {"humidity", "Влажность"},
-            {"uv", "Ультрафиолет"},
-            {"lighting", "Освещение"},
-            {"co2", "CO2"},
-            {"heating", "Отопление"}
-        };
-
 
         public MainWindow()
         {
@@ -53,7 +45,7 @@ namespace MySmartHouse
             greenhouse = database.GetCollection<BsonDocument>("greenhouse");
         }
 
-        private void StartToggleButtonUpdateThread()
+        public void StartToggleButtonUpdateThread()
         {
             Thread updateThread = new(() =>
             {
@@ -68,7 +60,7 @@ namespace MySmartHouse
             updateThread.Start();
         }
 
-        private async void Connect_ClickAsync(object sender, RoutedEventArgs e)
+        public async void Connect_ClickAsync(object sender, RoutedEventArgs e)
         {
             try {
                 if (!(clickcount1 == 1))
@@ -83,14 +75,52 @@ namespace MySmartHouse
                 switch (clickcount1)
                 {
                     case 1:
-                        var filter = Builders<BsonDocument>.Filter.Empty;
-                        var projection = Builders<BsonDocument>.Projection.Include("actual.sensor_values.control").Exclude("_id");
-                        var document = greenhouse.Find(filter).Project(projection).FirstOrDefault();
-
-                        if (document != null)
+                        try
                         {
-                            control_toggleBtn.Content = document["actual"]["sensor_values"]["control"].AsInt32 == 1 ? "Авто" : "Ручное";
-                            control_toggleBtn.IsChecked = document["actual"]["sensor_values"]["control"].AsInt32 == 1 ? true : false;
+                            string selectQuery = "SELECT control FROM sensor_values";
+
+                            MySqlConnection connection;
+                            MySqlCommand cmd;
+
+                            connection = new MySqlConnection(connectionString);
+                            cmd = new MySqlCommand();
+                            cmd.Connection = connection;
+                            cmd.CommandType = CommandType.Text;
+
+                            try
+                            {
+                                connection.Open();
+
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                            }
+
+                            cmd.CommandText = selectQuery;
+
+                            using (MySqlDataReader reader = cmd.ExecuteReader())
+                            {
+                                if (reader.HasRows)
+                                {
+                                    while (reader.Read())
+                                    {
+                                        int control = reader.GetInt32(0);
+
+                                        control_toggleBtn.Content = control == 1 ? "Авто" : "Ручное";
+                                        control_toggleBtn.IsChecked = control == 1 ? true : false;
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Нет данных.");
+                                }
+                                reader.Close();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Ошибка при выполнении SELECT запроса: {ex.Message}");
                         }
 
                         await UpdateToggleButtonStatesAsync();
@@ -155,78 +185,252 @@ namespace MySmartHouse
             }
         }
 
-        private void UpdateErrorsList()
+        public void UpdateErrorsList()
         {
             while (true)
             {
                 Thread.Sleep(1000);
 
-                var currentDocument = greenhouse.Find(Builders<BsonDocument>.Filter.Empty).FirstOrDefault();
-                if (currentDocument != null)
+                string selectErrorsQuery = "SELECT * FROM errors";
+
+                MySqlConnection connection;
+                MySqlCommand cmd;
+
+                connection = new MySqlConnection(connectionString);
+                cmd = new MySqlCommand();
+                cmd.Connection = connection;
+                cmd.CommandType = CommandType.Text;
+
+                try
                 {
-                    var errors = currentDocument["errors"].AsBsonDocument;
+                    connection.Open();
 
-                    Dispatcher.Invoke(() =>
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd.CommandText = selectErrorsQuery;
+
+                try
+                {
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
                     {
-                        Errors_List.Items.Clear();
-                        foreach (var error in errors)
+                        if (reader.HasRows)
                         {
-                            var translation = errorTranslations.ContainsKey(error.Name)
-                            ? errorTranslations[error.Name]
-                            : error.Name;
-
-                            if (error.Value.AsBoolean)
+                            Dispatcher.Invoke(() =>
                             {
-                                string audioFilePath = "error.mp3";
+                                Errors_List.Items.Clear();
+                                while (reader.Read())
+                                {
+                                    bool temperatureError = reader.GetBoolean("temperature");
+                                    bool humidityError = reader.GetBoolean("humidity");
+                                    bool uvError = reader.GetBoolean("uv");
+                                    bool lightingError = reader.GetBoolean("lighting");
+                                    bool co2Error = reader.GetBoolean("co2");
+                                    bool heatingError = reader.GetBoolean("heating");
 
-                                SoundPlayer player = new SoundPlayer(audioFilePath);
-
-                                Console.WriteLine("Воспроизведение звука...");
-                                player.PlayLooping();
-                                Errors_List.Items.Add(new { Error = $"{translation}: Ошибка" });
-                            }
+                                    if (temperatureError)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике температуры" });
+                                        playErrorSound();
+                                    }
+                                    if (humidityError)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике влажности" });
+                                        playErrorSound();
+                                    }
+                                    if (uvError)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике ультрафиолета" });
+                                        playErrorSound();
+                                    }
+                                    if (lightingError)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике света" });
+                                        playErrorSound();
+                                    }
+                                    if (co2Error)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике CO2" });
+                                        playErrorSound();
+                                    }
+                                    if (heatingError)
+                                    {
+                                        Errors_List.Items.Add(new { Error = "Ошибка в датчике отопления" });
+                                        playErrorSound();
+                                    }
+                                }
+                            });
                         }
-                    });
+                        else
+                        {
+                            Console.WriteLine("Нет данных.");
+                        }
+                        reader.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении SELECT запроса: {ex.Message}");
                 }
             }
         }
+        
+        public void playErrorSound()
+        {
+            string audioFilePath = @"C:\Users\NIK\source\repos\MySmartHouse\MySmartHouse\error.wav";
 
-        private async Task UpdateToggleButtonStatesAsync()
+            SoundPlayer player = new SoundPlayer(audioFilePath);
+
+            Console.WriteLine("Воспроизведение звука...");
+            player.Play();
+        }
+
+        public async Task UpdateToggleButtonStatesAsync()
         {
             await Dispatcher.Invoke(async () =>
             {
-                var filter = Builders<BsonDocument>.Filter.Empty;
-                var projection = Builders<BsonDocument>.Projection.Include("actual.devices").Exclude("_id");
-                var document = await greenhouse.Find(filter).Project(projection).FirstOrDefaultAsync();
-
-                if (document != null)
+                try
                 {
-                    var deviceTags = new List<string> { "watering", "heating", "lighting", "humidification", "fan_general", "fan_circulation", "framuga", "co2", "curtain" };
+                    string selectDevicesQuery = "SELECT * FROM devices";
 
-                    foreach (var tag in deviceTags)
+                    MySqlConnection connection;
+                    MySqlCommand cmd;
+
+                    connection = new MySqlConnection(connectionString);
+                    cmd = new MySqlCommand();
+                    cmd.Connection = connection;
+                    cmd.CommandType = CommandType.Text;
+
+                    try
                     {
-                        var isEnabled = document["actual"]["devices"][tag]["enabled"].AsBoolean;
+                        connection.Open();
 
-                        ToggleButton toggleButton = FindName($"{tag}_toggleBtn") as ToggleButton;
-                        if (toggleButton != null)
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
+
+                    cmd.CommandText = selectDevicesQuery;
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.HasRows)
                         {
-                            toggleButton.Content = isEnabled ? "Включено" : "Отключено";
-                            toggleButton.IsChecked = isEnabled;
-
-                            Ellipse circle = FindName($"{tag}_Circle") as Ellipse;
-                            if (circle != null)
+                            while (reader.Read())
                             {
-                                circle.Fill = isEnabled ? Brushes.Red : Brushes.Transparent;
+                                ToggleButton toggleButton = FindName("watering_toggleBtn") as ToggleButton;
+                                Ellipse circle = FindName("watering_Circle") as Ellipse;
+
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    switch (reader.GetName(i))
+                                    {
+                                        case "watering_enabled":
+                                            bool wateringEnabled = reader.GetBoolean("watering_enabled");
+                                            toggleButton = FindName("watering_toggleBtn") as ToggleButton;
+                                            circle = FindName("watering_Circle") as Ellipse;
+
+                                            toggleButton.Content = wateringEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = wateringEnabled;
+                                            circle.Fill = wateringEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "heating_enabled":
+                                            bool heatingEnabled = reader.GetBoolean("heating_enabled");
+                                            toggleButton = FindName("heating_toggleBtn") as ToggleButton;
+                                            circle = FindName("heating_Circle") as Ellipse;
+
+                                            toggleButton.Content = heatingEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = heatingEnabled;
+                                            circle.Fill = heatingEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "lighting_enabled":
+                                            bool lightingEnabled = reader.GetBoolean("lighting_enabled");
+                                            toggleButton = FindName("lighting_toggleBtn") as ToggleButton;
+                                            circle = FindName("lighting_Circle") as Ellipse;
+
+                                            toggleButton.Content = lightingEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = lightingEnabled;
+                                            circle.Fill = lightingEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "humidification_enabled":
+                                            bool humidificationEnabled = reader.GetBoolean("humidification_enabled");
+                                            toggleButton = FindName("humidification_toggleBtn") as ToggleButton;
+                                            circle = FindName("humidification_Circle") as Ellipse;
+
+                                            toggleButton.Content = humidificationEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = humidificationEnabled;
+                                            circle.Fill = humidificationEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "fan_general_enabled":
+                                            bool fan_generalEnabled = reader.GetBoolean("fan_general_enabled");
+                                            toggleButton = FindName("fan_general_toggleBtn") as ToggleButton;
+                                            circle = FindName("fan_general_Circle") as Ellipse;
+
+                                            toggleButton.Content = fan_generalEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = fan_generalEnabled;
+                                            circle.Fill = fan_generalEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "fan_circulation_enabled":
+                                            bool fan_circulationEnabled = reader.GetBoolean("fan_circulation_enabled");
+                                            toggleButton = FindName("fan_circulation_toggleBtn") as ToggleButton;
+                                            circle = FindName("fan_circulation_Circle") as Ellipse;
+
+                                            toggleButton.Content = fan_circulationEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = fan_circulationEnabled;
+                                            circle.Fill = fan_circulationEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "framuga_enabled":
+                                            bool framugaEnabled = reader.GetBoolean("framuga_enabled");
+                                            toggleButton = FindName("framuga_toggleBtn") as ToggleButton;
+                                            circle = FindName("framuga_Circle") as Ellipse;
+
+                                            toggleButton.Content = framugaEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = framugaEnabled;
+                                            circle.Fill = framugaEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "co2_enabled":
+                                            bool co2Enabled = reader.GetBoolean("co2_enabled");
+                                            toggleButton = FindName("co2_toggleBtn") as ToggleButton;
+                                            circle = FindName("co2_Circle") as Ellipse;
+
+                                            toggleButton.Content = co2Enabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = co2Enabled;
+                                            circle.Fill = co2Enabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                        case "curtain_enabled":
+                                            bool curtainEnabled = reader.GetBoolean("curtain_enabled");
+                                            toggleButton = FindName("curtain_toggleBtn") as ToggleButton;
+                                            circle = FindName("curtain_Circle") as Ellipse;
+
+                                            toggleButton.Content = curtainEnabled ? "Включено" : "Отключено";
+                                            toggleButton.IsChecked = curtainEnabled;
+                                            circle.Fill = curtainEnabled ? Brushes.Red : Brushes.Transparent;
+                                            break;
+                                    }
+                                }
                             }
                         }
+                        else
+                        {
+                            Console.WriteLine("Нет данных в таблице devices.");
+                        }
+                        reader.Close();
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении SELECT запроса: {ex.Message}");
                 }
             });
         }
 
-        private async Task ExecuteRepeatedlyAsync(CancellationToken cancellationToken)
+        public async Task ExecuteRepeatedlyAsync(CancellationToken cancellationToken)
         {
-            while (sensorData == null && !cancellationToken.IsCancellationRequested)
+/*            while (sensorData == null && !cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
             }
@@ -238,7 +442,6 @@ namespace MySmartHouse
 
             while (!cancellationToken.IsCancellationRequested)
             {
-                Console.WriteLine("EXECUTEREPEATEDASYNC В РАБОТЕ!");
                 double internalAirTemp = (int)Math.Round(sensorData.temp_internal_air);
                 double outsideAirTemp = (int)Math.Round(sensorData.temp_outside_air);
                 double groundTemp = (int)Math.Round(sensorData.temp_ground);
@@ -251,6 +454,130 @@ namespace MySmartHouse
                 int rain = sensorData.rain;
                 int wind = sensorData.wind;
                 var timestamp = DateTime.UtcNow;
+
+                string selectMaxQuery = "SELECT MAX(id) FROM devices;";
+                int maxDevicesId = 0;
+                MySqlConnection connection;
+                MySqlCommand cmd;
+
+                connection = new MySqlConnection(connectionString);
+                cmd = new MySqlCommand();
+                cmd.Connection = connection;
+                cmd.CommandType = CommandType.Text;
+
+                try
+                {
+                    connection.Open();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd.CommandText = selectMaxQuery;
+
+                using (MySqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                maxDevicesId = reader.GetInt32(i);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Нет данных в таблице devices.");
+                    }
+                    reader.Close();
+                }
+
+                string selectSensorQuery = "SELECT MAX(id) FROM sensor_values";
+                int maxSensorId = 0;
+                MySqlConnection connection2;
+                MySqlCommand cmd2;
+
+                connection2 = new MySqlConnection(connectionString);
+                cmd2 = new MySqlCommand();
+                cmd2.Connection = connection2;
+                cmd2.CommandType = CommandType.Text;
+
+                try
+                {
+                    connection.Open();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd.CommandText = selectSensorQuery;
+
+                using (MySqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.HasRows)
+                    {
+                        while (reader.Read())
+                        {
+                            for (int i = 0; i < reader.FieldCount; i++)
+                            {
+                                maxSensorId = reader.GetInt32(i);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Нет данных в таблице sensor_values.");
+                    }
+                    reader.Close();
+                }
+
+                try
+                {
+                    string updateQuery = $"INSERT history SET (sensor_values_id, devices_id, errors_id) = (@sensors_id, @devices_id, 1)";
+
+                    MySqlConnection connection1;
+                    MySqlCommand cmd1;
+
+                    connection1 = new MySqlConnection(connectionString);
+                    cmd1 = new MySqlCommand();
+                    cmd1.Connection = connection;
+                    cmd1.CommandType = CommandType.Text;
+
+                    try
+                    {
+                        connection1.Open();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
+
+                    cmd1.CommandText = updateQuery;
+
+                    cmd1.Parameters.AddWithValue("@sensors_id", maxSensorId);
+                    cmd1.Parameters.AddWithValue("@devices_id", maxDevicesId);
+
+                    int rowsAffected = cmd1.ExecuteNonQuery();
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Данные успешно обновлены.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Данные не были обновлены.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
+                }
 
                 // Получаем текущее значение из базы данных
                 var currentDocument = await greenhouse.Find(Builders<BsonDocument>.Filter.Empty).FirstOrDefaultAsync();
@@ -304,14 +631,65 @@ namespace MySmartHouse
 
                     await greenhouse.UpdateOneAsync(Builders<BsonDocument>.Filter.Empty, actualUpdate);
                 }
+            }  
 
-                await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+            await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);*/
+    }
+
+        public async Task UpdateErrorInDB(string error, bool isEnabled)
+        {
+            try
+            {
+                string updateQuery = $"UPDATE errors SET {error} = @isEnabled";
+
+                MySqlConnection connection1;
+                MySqlCommand cmd1;
+
+                connection1 = new MySqlConnection(connectionString);
+                cmd1 = new MySqlCommand();
+                cmd1.Connection = connection1;
+                cmd1.CommandType = CommandType.Text;
+
+                try
+                {
+                    connection1.Open();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd1.CommandText = updateQuery;
+
+                cmd1.Parameters.AddWithValue("@isEnabled", isEnabled);
+
+                int rowsAffected = cmd1.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    Console.WriteLine("Данные успешно обновлены.");
+                }
+                else
+                {
+                    Console.WriteLine("Данные не были обновлены.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
             }
         }
 
-        private void ArduinoPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        public async void ArduinoPort_DataReceived(object sender, SerialDataReceivedEventArgs e)
        {
-            string data = ArduinoPort.ReadLine();
+            string data = "";
+            try
+            {
+                data = ArduinoPort.ReadLine();
+
+                Console.WriteLine(data);
+            } catch { }
+            
 
             try
             {
@@ -328,6 +706,26 @@ namespace MySmartHouse
                 int uv = sensorData.uv;
                 int rain = sensorData.rain;
                 int wind = sensorData.wind;
+
+                // Ошибки
+                bool errors_temperature = sensorData.errors_temperature;
+                bool errors_humidity = sensorData.errors_humidity;
+                bool errors_uv = sensorData.errors_uv;
+                bool errors_lighting = sensorData.errors_lighting;
+                bool errors_co2 = sensorData.errors_co2;
+                bool errors_heating = sensorData.errors_heating;
+
+                List<Task> updateTasks = new List<Task>();
+
+        // Запускаем обновление в разных потоках
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("temperature", errors_temperature)));
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("humidity", errors_humidity)));
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("uv", errors_uv)));
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("lighting", errors_lighting)));
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("co2", errors_co2)));
+        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("heating", errors_heating)));
+
+        await Task.WhenAll(updateTasks);
 
                 Dispatcher.Invoke(() =>
                 {
@@ -351,42 +749,10 @@ namespace MySmartHouse
             }
         }
 
-    private void OnButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ArduinoPort.WriteLine("on");
-                Response = ArduinoPort.ReadLine();
-                Console.WriteLine(Response);
-
-                if (Response.Contains("o")) {
-                    Console.WriteLine("Реле включено!");
-                }
-            }
-            catch { }
-
-        }
-
-/*        private void OffButton_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                ArduinoPort.WriteLine("off");
-                string Response = ArduinoPort.ReadLine();
-                Console.WriteLine(Response);
-
-                if (Response.Contains("o"))
-                {
-                    Console.WriteLine("Реле выключено!");
-                }
-            }
-            catch { }
-        }*/
-
-        private void InitializeComboBox()
+        public void InitializeComboBox()
         {
             for (int hours = 0; hours < 24; hours++)
-            {
+            {  // TODO: 00:00 == Выключено
                 for (int minutes = 0; minutes < 60; minutes += 30)
                 {
                     string time = $"{hours:D2}:{minutes:D2}";
@@ -420,15 +786,51 @@ namespace MySmartHouse
             }
         }
 
-        private async Task UpdateDeviceStatusAsync(string deviceTag, bool isEnabled)
+        public async Task UpdateDeviceStatusAsync(string deviceTag, bool isEnabled)
         {
-            var filter = Builders<BsonDocument>.Filter.Empty;
-            var update = Builders<BsonDocument>.Update.Set($"actual.devices.{deviceTag}.enabled", isEnabled);
+            try
+            {
+                string updateQuery = $"UPDATE devices SET {deviceTag}_enabled = @isEnabled";
 
-            await greenhouse.UpdateOneAsync(filter, update);
+                MySqlConnection connection;
+                MySqlCommand cmd;
+
+                connection = new MySqlConnection(connectionString);
+                cmd = new MySqlCommand();
+                cmd.Connection = connection;
+                cmd.CommandType = CommandType.Text;
+
+                try
+                {
+                    connection.Open();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd.CommandText = updateQuery;
+
+                cmd.Parameters.AddWithValue("@isEnabled", isEnabled);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    Console.WriteLine("Данные успешно обновлены.");
+                }
+                else
+                {
+                    Console.WriteLine("Данные не были обновлены.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
+            }
         }
 
-        private async void ToggleButton_ClickAsync(object sender, RoutedEventArgs e)
+        public async void ToggleButton_ClickAsync(object sender, RoutedEventArgs e)
         {
             ToggleButton toggleButton = sender as ToggleButton;
             if (toggleButton != null)
@@ -438,6 +840,84 @@ namespace MySmartHouse
 
                 // Обновляем статус устройства в базе данных
                 await UpdateDeviceStatusAsync(tag, isEnabled);
+
+                try
+                {
+                    char action = '0';
+
+                    if (tag.Equals("watering") && isEnabled)
+                    {
+                        action = 'a';
+                    } else if (tag.Equals("watering") && !isEnabled)
+                    {
+                        action = 'b';
+                    } else if (tag.Equals("heating") && isEnabled)
+                    {
+                        action = 'c';
+                    } else if (tag.Equals("heating") && !isEnabled)
+                    {
+                        action = 'd';
+                    }
+                    else if (tag.Equals("lighting") && isEnabled)
+                    {
+                        action = 'e';
+                    }
+                    else if (tag.Equals("lighting") && !isEnabled)
+                    {
+                        action = 'f';
+                    }
+                    else if (tag.Equals("humidification") && isEnabled)
+                    {
+                        action = 'g';
+                    }
+                    else if (tag.Equals("humidification") && !isEnabled)
+                    {
+                        action = 'h';
+                    }
+                    else if (tag.Equals("fan_general") && isEnabled)
+                    {
+                        action = 'i';
+                    }
+                    else if (tag.Equals("fan_general") && !isEnabled)
+                    {
+                        action = 'j';
+                    }
+                    else if (tag.Equals("fan_circulation") && isEnabled)
+                    {
+                        action = 'k';
+                    }
+                    else if (tag.Equals("fan_circulation") && !isEnabled)
+                    {
+                        action = 'l';
+                    }
+                    else if (tag.Equals("co2") && isEnabled)
+                    {
+                        action = 'm';
+                    }
+                    else if (tag.Equals("co2") && !isEnabled)
+                    {
+                        action = 'n';
+                    }
+                    else if (tag.Equals("framuga") && isEnabled)
+                    {
+                        action = 'o';
+                    }
+                    else if (tag.Equals("framuga") && !isEnabled)
+                    {
+                        action = 'p';
+                    }
+
+                    ArduinoPort.WriteLine(action.ToString());
+                    Console.WriteLine(action);
+                    string Response = ArduinoPort.ReadLine();
+                    Console.WriteLine(Response);
+
+                    if (Response.Contains("1"))
+                    {
+                        Console.WriteLine($"Реле было обновлено!");
+                    }
+                }
+                catch { }
 
                 string state = isEnabled ? "Включено" : "Отключено";
 
@@ -451,7 +931,7 @@ namespace MySmartHouse
             }
         }
 
-        private void Control_ToggleButton_Click(object sender, RoutedEventArgs e)
+        public void Control_ToggleButton_Click(object sender, RoutedEventArgs e)
         {
             ToggleButton toggleButton = sender as ToggleButton;
             if (toggleButton != null)
@@ -459,51 +939,148 @@ namespace MySmartHouse
                 string state = toggleButton.IsChecked == true ? "Авто" : "Ручное";
                 toggleButton.Content = state;
 
-                var filter = Builders<BsonDocument>.Filter.Empty;
-                var update = Builders<BsonDocument>.Update.Set("actual.sensor_values.control", toggleButton.IsChecked == true ? 1 : 0);
+                try
+                {
+                    string updateQuery = $"UPDATE sensor_values SET control = @isAuto";
 
-                greenhouse.UpdateMany(filter, update);
+                    MySqlConnection connection;
+                    MySqlCommand cmd;
+
+                    connection = new MySqlConnection(connectionString);
+                    cmd = new MySqlCommand();
+                    cmd.Connection = connection;
+                    cmd.CommandType = CommandType.Text;
+
+                    try
+                    {
+                        connection.Open();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
+
+                    cmd.CommandText = updateQuery;
+
+                    cmd.Parameters.AddWithValue("@isAuto", toggleButton.IsChecked);
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Данные успешно обновлены.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Данные не были обновлены.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
+                }
             }
         }
 
-        private void History_Button_Click(object sender, RoutedEventArgs e)
+        public void History_Button_Click(object sender, RoutedEventArgs e)
         {
             History history = new History();
             history.Show();
         }
 
-        private void UpdateCheckBoxesFromDatabase()
+        public void UpdateCheckBoxesFromDatabase()
         {
             while (true)
             {
-                Thread.Sleep(1000); // Подождать 1 секунду перед следующей проверкой
+                Thread.Sleep(1000);
 
-                var currentDocument = greenhouse.Find(Builders<BsonDocument>.Filter.Empty).FirstOrDefault();
-                if (currentDocument != null)
+                try {
+                    string selectDevicesQuery = "SELECT watering_everyday, framuga_everyday, lighting_everyday, fan_general_everyday, fan_circulation_everyday, humidification_everyday, curtain_everyday, co2_everyday, heating_everyday FROM devices;";
+
+                    MySqlConnection connection;
+                    MySqlCommand cmd;
+
+                    connection = new MySqlConnection(connectionString);
+                    cmd = new MySqlCommand();
+                    cmd.Connection = connection;
+                    cmd.CommandType = CommandType.Text;
+
+                    try
+                    {
+                        connection.Open();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
+
+                    cmd.CommandText = selectDevicesQuery;
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.HasRows)
+                        {
+                            while (reader.Read())
+                            {
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    UpdateCheckBoxState(reader.GetName(i).Substring(0, reader.GetName(i).Length - "_everyday".Length), reader.GetBoolean(reader.GetName(i))); // В аргументы данного метода передаём название поля и получаем значение поля по его названию.
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Нет данных в таблице devices.");
+                        }
+                        reader.Close();
+                    }
+                }
+                catch (Exception ex)
                 {
-                    var devices = currentDocument["actual"]["devices"].AsBsonDocument;
-                    UpdateCheckBoxState(devices);
+                    Console.WriteLine($"Ошибка при выполнении SELECT запроса: {ex.Message}");
                 }
             }
         }
 
-        private void UpdateCheckBoxState(BsonDocument devices)
+        public void UpdateCheckBoxState(string device, bool isEnabled)
         {
             Dispatcher.Invoke(() =>
             {
-                watering_checkBox.IsChecked = devices["watering"]["everyday"].AsBoolean;
-                heating_checkBox.IsChecked = devices["heating"]["everyday"].AsBoolean;
-                lighting_checkBox.IsChecked = devices["lighting"]["everyday"].AsBoolean;
-                humidification_checkBox.IsChecked = devices["humidification"]["everyday"].AsBoolean;
-                fan_general_checkBox.IsChecked = devices["fan_general"]["everyday"].AsBoolean;
-                fan_circulation_checkBox.IsChecked = devices["fan_circulation"]["everyday"].AsBoolean;
-                framuga_checkBox.IsChecked = devices["framuga"]["everyday"].AsBoolean;
-                co2_checkBox.IsChecked = devices["co2"]["everyday"].AsBoolean;
-                curtain_checkBox.IsChecked = devices["curtain"]["everyday"].AsBoolean;
+                switch (device)
+                {
+                    case "watering":
+                        watering_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "heating":
+                        heating_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "lighting":
+                        lighting_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "humidification":
+                        humidification_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "fan_general":
+                        fan_general_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "fan_circulation":
+                        fan_circulation_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "framuga":
+                        framuga_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "co2":
+                        co2_checkBox.IsChecked = isEnabled;
+                        break;
+                    case "curtain":
+                        curtain_checkBox.IsChecked = isEnabled;
+                        break;
+                }
             });
         }
 
-                private async void CheckBox_Click(object sender, RoutedEventArgs e)
+        public async void CheckBox_Click(object sender, RoutedEventArgs e)
         {
             CheckBox checkBox = sender as CheckBox;
             if (checkBox != null)
@@ -511,57 +1088,163 @@ namespace MySmartHouse
                 bool state = (bool)checkBox.IsChecked;
                 string tag = checkBox.Tag as string;
 
-                // Обновляем базу данных
-                var filter = Builders<BsonDocument>.Filter.Empty;
-                var update = Builders<BsonDocument>.Update.Set($"actual.devices.{tag}.everyday", state);
-                await greenhouse.UpdateOneAsync(filter, update);
+                try
+                {
+                    string updateQuery = $"UPDATE devices SET {tag}_everyday = @isEveryday";
 
-                Console.WriteLine("CHECKBOX: " + tag + ", STATE: " + (state ? "включено" : "выключено"));
+                    MySqlConnection connection;
+                    MySqlCommand cmd;
+
+                    connection = new MySqlConnection(connectionString);
+                    cmd = new MySqlCommand();
+                    cmd.Connection = connection;
+                    cmd.CommandType = CommandType.Text;
+
+                    try
+                    {
+                        connection.Open();
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
+
+                    cmd.CommandText = updateQuery;
+
+                    cmd.Parameters.AddWithValue("@isEveryday", state);
+
+                    int rowsAffected = cmd.ExecuteNonQuery();
+                    if (rowsAffected > 0)
+                    {
+                        Console.WriteLine("Данные успешно обновлены.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Данные не были обновлены.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
+                }
             }
         }
 
 
-        private async Task UpdateDeviceTimeAsync(string deviceName, string timeField, string newValue)
+        public async Task UpdateDeviceTimeAsync(string deviceName, string timeField, string newValue)
         {
-            var filter = Builders<BsonDocument>.Filter.Eq("_id", new ObjectId("64dc5bc1c4b69d07df12306f"));
-            var update = Builders<BsonDocument>.Update.Set($"actual.devices.{deviceName}.{timeField}", newValue);
+            try
+            {
+                string updateQuery = $"UPDATE devices SET {deviceName}_{timeField} = @time";
 
-            await greenhouse.UpdateOneAsync(filter, update);
+                MySqlConnection connection;
+                MySqlCommand cmd;
+
+                connection = new MySqlConnection(connectionString);
+                cmd = new MySqlCommand();
+                cmd.Connection = connection;
+                cmd.CommandType = CommandType.Text;
+
+                try
+                {
+                    connection.Open();
+
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                }
+
+                cmd.CommandText = updateQuery;
+
+                cmd.Parameters.AddWithValue("@time", newValue);
+
+                int rowsAffected = cmd.ExecuteNonQuery();
+                if (rowsAffected > 0)
+                {
+                    Console.WriteLine("Данные успешно обновлены.");
+                }
+                else
+                {
+                    Console.WriteLine("Данные не были обновлены.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка при выполнении UPDATE запроса: {ex.Message}");
+            }
         }
 
-        private void UpdateComboBoxes()
+        public void UpdateComboBoxes()
         {
             while (true)
             {
-                var devices = database.GetCollection<BsonDocument>("greenhouse")
-                                      .Find(Builders<BsonDocument>.Filter.Empty)
-                                      .FirstOrDefault()["actual"]["devices"].AsBsonDocument;
-
-                foreach (var device in devices)
+                try
                 {
-                    string deviceName = device.Name;
-                    var deviceData = device.Value.AsBsonDocument;
-                    string timeMin = deviceData["time_min"].AsString;
-                    string timeMax = deviceData["time_max"].AsString;
+                    string selectDevicesQuery = "SELECT watering_time_min, framuga_time_min, lighting_time_min, fan_general_time_min, fan_circulation_time_min, humidification_time_min, curtain_time_min, co2_time_min, heating_time_min, watering_time_max, framuga_time_max, lighting_time_max, fan_general_time_max, fan_circulation_time_max, humidification_time_max, curtain_time_max, co2_time_max, heating_time_max FROM devices;";
 
-                    Dispatcher.Invoke(() =>
+                    MySqlConnection connection;
+                    MySqlCommand cmd;
+
+                    connection = new MySqlConnection(connectionString);
+                    cmd = new MySqlCommand();
+                    cmd.Connection = connection;
+                    cmd.CommandType = CommandType.Text;
+
+                    try
                     {
-                        ComboBox minComboBox = FindName($"{deviceName}_min") as ComboBox;
-                        ComboBox maxComboBox = FindName($"{deviceName}_max") as ComboBox;
+                        connection.Open();
 
-                        if (minComboBox != null)
-                            minComboBox.SelectedItem = timeMin;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Ошибка подключения к базе данных: {ex.Message}");
+                    }
 
-                        if (maxComboBox != null)
-                            maxComboBox.SelectedItem = timeMax;
-                    });
+                    cmd.CommandText = selectDevicesQuery;
+
+                    using (MySqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        if (reader.HasRows)
+                        {
+                            while (reader.Read())
+                            {
+                                for (int i = 0; i < reader.FieldCount; i++)
+                                {
+                                    string deviceName = reader.GetName(i).Replace("_time_min", "").Replace("_time_max", "");
+                                    var deviceData = reader.GetString(reader.GetName(i)).Substring(0, 5); // Оставляем только последние 6 символов, убирая секунды.
+
+                                    Dispatcher.Invoke(() =>
+                                    {
+                                        bool isTimeMin = reader.GetName(i).EndsWith("_time_min");
+                                        string comboBoxName = deviceName + (isTimeMin ? "_min" : "_max");
+
+                                        ComboBox comboBox = FindName(comboBoxName) as ComboBox;
+
+                                        if (comboBox != null)
+                                            comboBox.SelectedItem = deviceData;
+                                    });
+                                }
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Нет данных в таблице devices.");
+                        }
+                        reader.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при выполнении SELECT запроса: {ex.Message}");
                 }
 
-                Thread.Sleep(1000); // Пауза в 1 секунду
+                Thread.Sleep(1000);
             }
         }
 
-        private async void ComboBox_SelectionChangedAsync(object sender, SelectionChangedEventArgs e)
+        public async void ComboBox_SelectionChangedAsync(object sender, SelectionChangedEventArgs e)
         {
             ComboBox comboBox = sender as ComboBox;
             if (comboBox != null)
@@ -578,7 +1261,6 @@ namespace MySmartHouse
                     string actionType = comboBox.Name.EndsWith("min") ? "min" : "max";
 
                     string timeField = $"time_{actionType}";
-                    Console.WriteLine($"{deviceName}, {timeField} ({selectedValue})");
                     await UpdateDeviceTimeAsync(deviceName, timeField, selectedValue);
                 }
             }
@@ -599,5 +1281,11 @@ namespace MySmartHouse
         public int uv { get; set; }
         public int rain { get; set; }
         public int wind { get; set; }
+        public bool errors_temperature { get; set; }
+        public bool errors_humidity { get; set; }
+        public bool errors_uv { get; set; }
+        public bool errors_lighting { get; set; }
+        public bool errors_co2 { get; set; }
+        public bool errors_heating { get; set; }
     }
 }

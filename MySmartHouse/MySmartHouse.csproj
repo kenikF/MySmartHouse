@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="MahApps.Metro" Version="2.4.10" />
     <PackageReference Include="MongoDB.Driver" Version="2.21.0" />
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
     <PackageReference Include="Syncfusion.Licensing" Version="22.2.10" />
     <PackageReference Include="Syncfusion.SfGrid.WPF" Version="22.2.10" />
     <PackageReference Include="System.IO.Ports" Version="7.0.0" />
