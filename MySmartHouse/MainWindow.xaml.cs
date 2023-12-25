@@ -15,6 +15,10 @@ using System.Media;
 using MySql.Data.MySqlClient;
 using System.Data;
 using System.Windows.Media.Imaging;
+using Amazon.SecurityToken.Model;
+using System.Linq;
+using MahApps.Metro.Controls;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MySmartHouse
 {
@@ -25,8 +29,10 @@ namespace MySmartHouse
     {
         public CancellationTokenSource tokenSource;
         public bool isRunning = false;
+        public bool isMuted = false;
 
         const char FRAMUGA_STOP_ACTION = 'q';
+        const char CURTAIN_STOP_ACTION = 't';
 
         const string connectionUrl = "mongodb://localhost:27017";
         SerialPort ArduinoPort = new();
@@ -155,7 +161,7 @@ namespace MySmartHouse
                             var errorUpdateThread = new Thread(UpdateErrorsList);
                             errorUpdateThread.IsBackground = true;
                             errorUpdateThread.Start();
-                            await Task.Run(() => ExecuteRepeatedlyAsync(tokenSource.Token));
+                            await TimeControl();
                         }
 
                         break;
@@ -283,6 +289,8 @@ namespace MySmartHouse
         
         public void playErrorSound()
         {
+            Console.WriteLine(isMuted);
+            if (isMuted) return;
             string audioFilePath = @"C:\Users\NIK\source\repos\MySmartHouse\MySmartHouse\error.wav";
 
             SoundPlayer player = new SoundPlayer(audioFilePath);
@@ -718,17 +726,19 @@ namespace MySmartHouse
                 bool errors_co2 = sensorData.errors_co2;
                 bool errors_heating = sensorData.errors_heating;
 
+                string time = DateTime.Now.ToLongTimeString();
+
                 List<Task> updateTasks = new List<Task>();
 
-        // Запускаем обновление в разных потоках
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("temperature", errors_temperature)));
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("humidity", errors_humidity)));
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("uv", errors_uv)));
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("lighting", errors_lighting)));
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("co2", errors_co2)));
-        updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("heating", errors_heating)));
+                // Запускаем обновление в разных потоках
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("temperature", errors_temperature)));
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("humidity", errors_humidity)));
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("uv", errors_uv)));
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("lighting", errors_lighting)));
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("co2", errors_co2)));
+                updateTasks.Add(Task.Run(async () => await UpdateErrorInDB("heating", errors_heating)));
 
-        await Task.WhenAll(updateTasks);
+                await Task.WhenAll(updateTasks);
 
                 Dispatcher.Invoke(() =>
                 {
@@ -743,6 +753,7 @@ namespace MySmartHouse
                     uv_text.Content = uv.ToString();
                     rain_text.Content = rain.ToString();
                     wind_text.Content = wind.ToString();
+                    clock.Content = time;
                 });
 
             }
@@ -789,6 +800,20 @@ namespace MySmartHouse
             }
         }
 
+        public void MuteButton_Click(object sender, EventArgs e)
+        {
+            isMuted = !isMuted;
+
+            if (isMuted)
+            {
+                imageControl.Source = new BitmapImage(new Uri("free-icon-mute-4377264.png", UriKind.RelativeOrAbsolute));
+            }
+            else
+            {
+                imageControl.Source = new BitmapImage(new Uri("free-icon-speaker-4377257.png", UriKind.RelativeOrAbsolute));
+            }
+        }
+
         public async void FramugaStop_ClickAsync(object sender, RoutedEventArgs e)
         {
             ArduinoPort.WriteLine(FRAMUGA_STOP_ACTION.ToString());
@@ -798,7 +823,20 @@ namespace MySmartHouse
 
             if (Response.Contains("1"))
             {
-                Console.WriteLine($"Реле было остановлено!");
+                Console.WriteLine("Реле было остановлено!");
+            }
+        }
+
+        public async void CurtainStop_ClickAsync(object sender, RoutedEventArgs e)
+        {
+            ArduinoPort.WriteLine(CURTAIN_STOP_ACTION.ToString());
+            Console.WriteLine(CURTAIN_STOP_ACTION);
+            string Response = ArduinoPort.ReadLine();
+            Console.WriteLine(Response);
+
+            if (Response.Contains("1"))
+            {
+                Console.WriteLine("Реле было остановлено!");
             }
         }
 
@@ -922,6 +960,14 @@ namespace MySmartHouse
                     {
                         action = 'p';
                     }
+                    else if (tag.Equals("curtain") && isEnabled)
+                    {
+                        action = 'r';
+                    }
+                    else if (tag.Equals("curtain") && !isEnabled)
+                    {
+                        action = 's';
+                    }
 
                     ArduinoPort.WriteLine(action.ToString());
                     Console.WriteLine(action);
@@ -950,6 +996,110 @@ namespace MySmartHouse
                 }
 
                 toggleButton.Content = state;
+            }
+        }
+
+        public void ToggleDevice(string sym)
+        {
+            ArduinoPort.WriteLine(sym);
+            Console.WriteLine(sym);
+            string Response1 = ArduinoPort.ReadLine();
+            if (Response1[0] == '{')
+            {
+                Response1 = ArduinoPort.ReadLine();
+            }
+            Console.WriteLine(Response1);
+
+            if (Response1.Contains("1"))
+            {
+                Console.WriteLine($"Реле было обновлено!");
+                this.Invoke(new Action(() =>
+                {
+
+                    /*string state = isEnabled ? "Включено" : "Отключено";
+
+                    if (tag == "framuga")
+                    {
+                        state = isEnabled ? "Открыто" : "Закрыто";
+                    }
+
+
+                    Ellipse circle = FindName($"{tag}_Circle") as Ellipse;
+                    if (circle != null)
+                    {
+                        circle.Fill = isEnabled ? Brushes.Red : Brushes.Transparent;
+                    }
+
+                    toggleButton.Content = state;
+
+                    watering_Circle.Fill = toggleButton.IsChecked ? Brushes.Red : Brushes.Transparent;*/
+                }));
+            }
+        }
+
+        public async Task TimeControl()
+        {
+            try
+            {
+                await Task.Run(async () =>
+                {
+                    while (true)
+                    {
+                        string time = DateTime.Now.ToLongTimeString();
+
+                        Console.WriteLine(time);
+
+                        object wateringMin = null;
+                        object wateringMax = null;
+                        object heatingMin = null;
+                        object heatingMax = null;
+                        object lightingMin = null;
+                        object lightingMax = null;
+
+                        this.Invoke(new Action(() =>
+                        {
+                            wateringMin = watering_min.SelectedItem;
+                            wateringMax = watering_max.SelectedItem;
+                            heatingMin = heating_min.SelectedItem;
+                            heatingMax = heating_max.SelectedItem;
+                            lightingMin = lighting_min.SelectedItem;
+                            lightingMax = lighting_max.SelectedItem;
+                        }));
+
+                        wateringMin += ":00";
+                        wateringMax += ":00";
+                        heatingMin += ":00";
+                        heatingMax += ":00";
+                        lightingMin += ":00";
+                        lightingMax += ":00";
+
+                        if (wateringMin.Equals(time))
+                        {
+                            ToggleDevice("a");
+                        }
+
+                        if (wateringMax.Equals(time))
+                        {
+                            ToggleDevice("b");
+                        }
+
+                        if (heatingMin.Equals(time))
+                        {
+                            ToggleDevice("c");
+                        }
+
+                        if (heatingMax.Equals(time))
+                        {
+                            ToggleDevice("d");
+                        }
+
+                        await Task.Delay(1000);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Произошло исключение: {ex.Message}");
             }
         }
 
@@ -1286,6 +1436,11 @@ namespace MySmartHouse
                     await UpdateDeviceTimeAsync(deviceName, timeField, selectedValue);
                 }
             }
+        }
+
+        private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
         }
     }
 

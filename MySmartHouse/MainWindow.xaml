@@ -202,14 +202,19 @@
                 <DataGridTextColumn Binding="{Binding Error}" Width="*" />
             </DataGrid.Columns>
         </DataGrid>
-        <Button  x:Name="framuga_toggleBtn_Копировать" Tag="framuga" Click="FramugaStop_ClickAsync" Content="Стоп" Width="75" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="927,394,0,0" Background="White" FontFamily="Arial Black" >
+        <Button x:Name="framuga_toggleBtn_Копировать" Tag="framuga" Click="FramugaStop_ClickAsync" Content="Стоп" Width="75" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="927,394,0,0" Background="White" FontFamily="Arial Black" >
             <Button.Effect>
                 <DropShadowEffect/>
             </Button.Effect>
         </Button>
-        
-        <Image HorizontalAlignment="Left" Height="43" Margin="456,42,0,0" VerticalAlignment="Top" Width="52" Source="sound_on.png" />
 
+        <Image x:Name="imageControl" HorizontalAlignment="Left" Height="43" Margin="456,42,0,0" VerticalAlignment="Top" Width="52" Source="sound_on.png" />
+        <Label Grid.Column="1" Content="Загрузка" HorizontalAlignment="Left" Margin="433,45,0,0" VerticalAlignment="Top" x:Name="clock" Width="264" FontSize="24" Foreground="White"/>
+        <Button x:Name="curtain_toggleBtn_Копировать" Tag="curtain" Click="CurtainStop_ClickAsync" Content="Стоп" Width="75" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left" BorderBrush="Black" Margin="927,475,0,0" Background="White" FontFamily="Arial Black" >
+            <Button.Effect>
+                <DropShadowEffect/>
+            </Button.Effect>
+        </Button>
 
     </Grid>
 </Window>

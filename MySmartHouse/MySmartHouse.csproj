@@ -9,11 +9,15 @@
 
   <ItemGroup>
     <None Remove="cat.jpg" />
+    <None Remove="free-icon-mute-4377264.png" />
     <None Remove="free-icon-rain-4150897.png" />
+    <None Remove="free-icon-speaker-4377257.png" />
     <None Remove="free-icon-sun-4503036.png" />
     <None Remove="free-icon-thermometer-1809260.png" />
     <None Remove="free-icon-windsock-4151026.png" />
     <None Remove="pech-dlja-teplicy-svoimi-rukami1.jpg" />
+    <None Remove="ТЕМПЕРАТУРА-111-оС.png" />
+    <None Remove="ТЕМПЕРАТУРА-оС.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,11 +31,19 @@
 
   <ItemGroup>
     <Resource Include="cat.jpg" />
+    <Resource Include="free-icon-mute-4377264.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="free-icon-rain-4150897.png" />
+    <Resource Include="free-icon-speaker-4377257.png">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="free-icon-sun-4503036.png" />
     <Resource Include="free-icon-thermometer-1809260.png" />
     <Resource Include="free-icon-windsock-4151026.png" />
     <Resource Include="pech-dlja-teplicy-svoimi-rukami1.jpg" />
+    <Resource Include="ТЕМПЕРАТУРА-111-оС.png" />
+    <Resource Include="ТЕМПЕРАТУРА-оС.png" />
   </ItemGroup>
 
 </Project>
